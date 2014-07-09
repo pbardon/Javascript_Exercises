@@ -12,7 +12,6 @@
     this.matrix = [["_", "_", "_"],["_", "_", "_"],["_", "_", "_"]];
   };
   Board.prototype.isWon = function() {
-    console.log("winner returns: " + this.winner());
     if (this.winner()) {
       return true;
     }
@@ -58,34 +57,99 @@
     this.matrix[y][x] = mark;
   }
   
+  Board.prototype.render = function() {
+    this.matrix.forEach(function(row){
+      console.log(row);
+    });
+  }
+  
+  Board.prototype.dup = function() {
+    var board = this;
+    var duped = new Board();
+    duped.matrix = [];
+    board.matrix.forEach(function(row){
+      duped.matrix.push(row.slice(0));
+    });
+    return duped;
+  }
+  
   var Game = TicTacToe.Game = function(){
     this.board = new Board();
-    this.mark = "x"
+    this.player1 = new HumanPlayer("x", this);
+    this.player2 = new ComputerPlayer("o", this);
   }
   
   Game.prototype.play = function() {
+    this.player1.getMove();
+  };
+  
+  Game.prototype.otherPlayer = function(currentPlayer){
     var game = this;
-    if (game.board.isWon()) {
-      console.log(game.board.winner() + " won.");
+    if (currentPlayer === game.player1) {
+      return game.player2;
+    } else {
+      return game.player1;
+    }
+  }
+  
+  var HumanPlayer = TicTacToe.HumanPlayer = function (mark, game) {
+    this.mark = mark;
+    this.game = game;
+  };
+  
+  HumanPlayer.prototype.getMove = function(){
+    var player = this;
+    if (player.game.board.isWon()) {
+      console.log(player.game.board.winner() + " won.");
       return;
     }
-    console.log(game.board);
+    var otherplayer = player.game.otherPlayer(player);
+    player.game.board.render();
     READER.question("Enter x position of space:", function(xpos) {
       READER.question("Enter y position of space:", function(ypos){
         var xCoord = parseInt(xpos);
         var yCoord = parseInt(ypos);
-        game.board.placeMark([xCoord, yCoord], game.mark);
-        (game.mark === "x") ? game.mark = "o" : game.mark = "x";
-        game.play();
+        player.game.board.placeMark([xCoord, yCoord], player.mark);
+        otherplayer.getMove();
       });
     });
   };
   
-  var HumanPlayer = TicTacToe.HumanPlayer = function (mark, board) {
+  var ComputerPlayer = TicTacToe.ComputerPlayer = function (mark, game) {
     this.mark = mark;
-    this.board = board
-  }
-
+    this.game = game;
+  };
+  
+  ComputerPlayer.prototype.getMove = function(){
+    var player = this;
+    if (player.game.board.isWon()) {
+      console.log(player.game.board.winner() + " won.");
+      return;
+    }
+    var possibleMoves = [];
+    var winMove = null;
+    for (var k = 0; k < player.game.board.matrix.length; k++) {
+      for (var l = 0; l < player.game.board.matrix[0].length; l++) {
+        if (player.game.board.matrix[k][l] === "_") {
+          possibleMoves.push([l,k]);
+        }
+      }
+    }
+    for (var m = 0; m < possibleMoves.length; m++) {
+      dupboard = player.game.board.dup();
+      dupboard.placeMark(possibleMoves[m], player.mark);
+      console.log(dupboard);
+      if (dupboard.isWon()){
+        winMove = possibleMoves[m];
+      }
+    }
+    move = winMove || possibleMoves[0];
+    
+    var otherplayer = player.game.otherPlayer(player);
+    console.log(possibleMoves);
+    player.game.board.placeMark(move, player.mark);
+    otherplayer.getMove();
+  };
 })(this);
 
 var game = new this.TicTacToe.Game;
